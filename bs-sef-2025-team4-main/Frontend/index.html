@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SCE • Portal Access</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #6366f1; --primary-hover: #4f46e5; --bg: #030712;
+      --text-main: #1e293b; --text-muted: #64748b; --card-bg: #ffffff;
+    }
+    [data-theme="dark"] {
+      --bg: #030712; --card-bg: #0f172a; --text-main: #f8fafc; --text-muted: #94a3b8;
+    }
+
+    /* ===== WEB3 BACKGROUND ===== */
+    body {
+      margin: 0; font-family: 'Heebo', sans-serif; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; transition: 0.4s; overflow: hidden; padding: 10px;
+      background:
+        radial-gradient(circle at 20% 20%, #6366f1aa, transparent 40%),
+        radial-gradient(circle at 80% 80%, #8b5cf6aa, transparent 40%),
+        linear-gradient(135deg,#020617,#030712);
+    }
+
+    /* ===== MAIN CARD ===== */
+    .auth-card {
+        position: relative; width: 1050px; max-width: 100%; height: 680px; max-height: 95vh;
+        background: var(--card-bg); border-radius: 30px;
+        box-shadow: 0 40px 90px rgba(0,0,0,0.4);
+        overflow: hidden;
+    }
+
+    /* ===== FORM CONTAINERS (Layer 1) ===== */
+    .form-container {
+        position: absolute; top: 0; height: 100%; width: 50%;
+        padding: 40px 60px; display: flex; flex-direction: column;
+        justify-content: center; overflow-y: auto; box-sizing: border-box;
+        transition: all 0.6s ease-in-out; z-index: 1;
+    }
+
+    /* עיגון טפסים: הרשמה משמאל, כניסה מימין */
+    .register-panel { left: 0; opacity: 0; pointer-events: none; }
+    .login-panel { right: 0; opacity: 1; pointer-events: auto; }
+
+    /* שינוי מצב גליות */
+    .auth-card.active .register-panel { opacity: 1; pointer-events: auto; }
+    .auth-card.active .login-panel { opacity: 0; pointer-events: none; }
+
+    /* ===== SLIDING PANEL (Layer 2) ===== */
+    .visual-wrapper {
+        position: absolute; top: 0; left: 0; width: 50%; height: 100%;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        transition: transform .8s cubic-bezier(.77,0,.18,1);
+        z-index: 10; display: flex; align-items: center; justify-content: center;
+    }
+    .visual-wrapper::before {
+        content: ''; position: absolute; inset: 0;
+        background: url('https://www.transparenttextures.com/patterns/cubes.png'); opacity: .12;
+    }
+    /* במצב Active הסליידר זז ימינה ומכסה את הכניסה */
+    .auth-card.active .visual-wrapper { transform: translateX(100%); }
+
+    .visual-content {
+        color: white; text-align: center; padding: 40px; position: relative; z-index: 11;
+        transition: opacity 0.4s ease;
+    }
+    .visual-content i { font-size: 72px; margin-bottom: 20px; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); }
+    .visual-content h2 { font-size: 30px; font-weight: 900; margin-bottom: 15px; }
+    .visual-content p { font-size: 15px; opacity: .9; max-width: 280px; line-height: 1.6; }
+
+    /* ===== FIELD STYLES (תיקון יישור) ===== */
+    .logo-container { text-align: center; margin-bottom: 25px; }
+    .logo-img { height: 60px; width: auto; object-fit: contain; }
+
+    h1 { font-size: 26px; font-weight: 800; color: var(--text-main); margin-bottom: 6px; text-align: center; }
+    .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 25px; text-align: center; }
+
+    .input-group { margin-bottom: 20px; text-align: right; width: 100%; }
+    .input-row { display: flex; gap: 15px; width: 100%; }
+    .input-row .input-group { flex: 1; }
+
+    label { font-size: 12px; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 6px; padding-right: 4px; }
+    .input-wrapper { position: relative; width: 100%; }
+
+    input {
+        width: 100%; box-sizing: border-box; background: #f8fafc;
+        border: 2px solid #e2e8f0; border-radius: 12px;
+        padding: 12px 42px 12px 14px; color: var(--text-main);
+        font-size: 14px; transition: 0.3s; outline: none; font-family: inherit;
+    }
+    input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+    .input-wrapper i { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; }
+
+    .btn-submit {
+        width: 100%; padding: 15px; background: var(--primary); color: white;
+        border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
+        cursor: pointer; transition: 0.3s; margin-top: 10px;
+    }
+    .btn-submit:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+    .switch-text { text-align: center; margin-top: 22px; font-size: 13px; color: var(--text-muted); }
+    .switch-text span { color: var(--primary); font-weight: 800; cursor: pointer; }
+
+    .theme-btn { position: fixed; top: 20px; left: 20px; cursor: pointer; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--card-bg); border: 1px solid #e2e8f0; z-index: 1000; }
+
+    @media (max-width: 900px) {
+        .visual-wrapper { display: none; }
+        .form-container { width: 100% !important; left: 0 !important; right: 0 !important; }
+        .register-panel { display: none; }
+        .auth-card.active .register-panel { display: flex; }
+        .auth-card.active .login-panel { display: none; }
+    }
+  </style>
+</head>
+<body data-theme="light">
+
+  <div class="theme-btn" onclick="toggleTheme()"><i class="fas fa-sun" id="theme-icon"></i></div>
+
+  <div class="auth-card" id="authCard">
+
+    <div class="visual-wrapper" id="vWrapper">
+      <div class="visual-content" id="vContent">
+        <i class="fas fa-user-graduate" id="visualIcon"></i>
+        <h2 id="visualTitle">Smart Student Forms</h2>
+        <p id="visualDesc">המערכת המתקדמת לניהול בקשות אקדמיות במכללת SCE. הגישו בקשות וקבלו מענה מהיר.</p>
+        <button class="btn-submit" id="mobileSwitch" style="background:white; color:var(--primary); width:auto; padding:10px 25px; display:none;" onclick="toggleAuthMobile()"></button>
+      </div>
+    </div>
+
+    <div class="form-container register-panel">
+        <div class="logo-container"><img src="https://upload.wikimedia.org/wikipedia/he/4/44/SCE_logo.png" alt="SCE" class="logo-img"></div>
+        <h1>יצירת חשבון</h1>
+        <div class="subtitle">הצטרפו למערכת ניהול הטפסים החדשה</div>
+        <form id="regForm">
+          <div class="input-row">
+            <div class="input-group">
+              <label>שם פרטי</label>
+              <div class="input-wrapper"><input id="first_name" placeholder="עילאי" required><i class="fas fa-user"></i></div>
+            </div>
+            <div class="input-group">
+              <label>שם משפחה</label>
+              <div class="input-wrapper"><input id="last_name" placeholder="ברגיל" required><i class="fas fa-user"></i></div>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>אימייל אקדמי</label>
+            <div class="input-wrapper"><input type="email" id="r_email" placeholder="example@ac.sce.ac.il" required><i class="fas fa-envelope"></i></div>
+          </div>
+          <div class="input-group">
+            <label>סיסמה חדשה</label>
+            <div class="input-wrapper"><input type="password" id="r_pass" placeholder="לפחות 6 תווים..." required><i class="fas fa-fingerprint"></i></div>
+          </div>
+          <button type="submit" class="btn-submit" id="rBtn">צור חשבון חדש</button>
+        </form>
+        <div class="switch-text">כבר רשום? <span onclick="toggleAuth('login')">חזרה לכניסה</span></div>
+    </div>
+
+    <div class="form-container login-panel">
+        <div class="logo-container"><img src="https://upload.wikimedia.org/wikipedia/he/4/44/SCE_logo.png" alt="SCE" class="logo-img"></div>
+        <h1>כניסה למערכת</h1>
+        <div class="subtitle">ברוכים השבים! אנא הזן פרטים לכניסה</div>
+        <form id="loginForm">
+          <div class="input-group">
+            <label>אימייל אקדמי</label>
+            <div class="input-wrapper"><input type="email" id="l_email" placeholder="example@ac.sce.ac.il" required><i class="fas fa-envelope"></i></div>
+          </div>
+          <div class="input-group">
+            <label>סיסמה</label>
+            <div class="input-wrapper"><input type="password" id="l_pass" placeholder="הזן סיסמה..." required><i class="fas fa-lock"></i></div>
+          </div>
+          <button type="submit" class="btn-submit" id="lBtn">כניסה למערכת</button>
+        </form>
+        <div class="switch-text">אין לך משתמש? <span onclick="toggleAuth('reg')">הרשמה מהירה</span></div>
+    </div>
+
+  </div>
+
+<script>
+  function apiBase(){ return (location.port === "8000") ? "" : "http://127.0.0.1:8000"; }
+
+  function toggleAuth(mode) {
+    const card = document.getElementById('authCard');
+    const icon = document.getElementById('visualIcon');
+    const title = document.getElementById('visualTitle');
+    const desc = document.getElementById('visualDesc');
+    const vContent = document.getElementById('vContent');
+
+    vContent.style.opacity = '0';
+
+    setTimeout(() => {
+      if(mode === 'reg') {
+        card.classList.add('active'); // מזיז סליידר לימין
+        icon.className = 'fas fa-rocket';
+        title.innerText = 'התחילו את המסע';
+        desc.innerText = 'נהלו את כל הבקשות האקדמיות במקום אחד, בנוחות ובשקיפות מלאה.';
+      } else {
+        card.classList.remove('active'); // מזיז סליידר לשמאל
+        icon.className = 'fas fa-user-graduate';
+        title.innerText = 'Smart Student Forms';
+        desc.innerText = 'המערכת המתקדמת לניהול בקשות אקדמיות במכללת SCE. הגישו בקשות וקבלו מענה מהיר.';
+      }
+      vContent.style.opacity = '1';
+    }, 400);
+  }
+
+  // לוגיקת כניסה
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("lBtn");
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> מתחבר...';
+    try {
+      const res = await fetch(`${apiBase()}/auth/login`, {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email: document.getElementById("l_email").value.trim(), password: document.getElementById("l_pass").value, role: "STUDENT" })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("user", JSON.stringify(data));
+        window.location.href = "/dashboard";
+      } else { alert(data.detail || "פרטים שגויים"); btn.innerText = "כניסה למערכת"; }
+    } catch (err) { alert("שגיאת תקשורת"); btn.innerText = "כניסה למערכת"; }
+  });
+
+  // לוגיקת הרשמה
+  document.getElementById("regForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("rBtn");
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> יוצר חשבון...';
+    const payload = {
+        first_name: document.getElementById("first_name").value.trim(),
+        last_name: document.getElementById("last_name").value.trim(),
+        email: document.getElementById("r_email").value.trim(),
+        password: document.getElementById("r_pass").value,
+        role: "STUDENT"
+    };
+    try {
+      const res = await fetch("/auth/register", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) });
+      if (res.ok) { alert("נרשמת בהצלחה!"); toggleAuth('login'); }
+      else { const d = await res.json(); alert(d.detail || "שגיאה"); }
+    } catch (err) { alert("שגיאת תקשורת"); } finally { btn.innerText = "צור חשבון חדש"; }
+  });
+
+  function toggleTheme() {
+    const b = document.body; const n = b.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    b.setAttribute('data-theme', n); localStorage.setItem('theme', n);
+    document.getElementById('theme-icon').className = n === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+  }
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.body.setAttribute('data-theme', savedTheme);
+  document.getElementById('theme-icon').className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+</script>
+</body>
+</html>
